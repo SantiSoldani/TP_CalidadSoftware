@@ -2,6 +2,7 @@ package test.cajanegra;
 
 import static org.junit.Assert.*;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import persistencia.AsociadoDTO;
@@ -78,6 +79,40 @@ public class Test_AsociadoDTO {
         // La restricción de unicidad del SRS 3.1 debe delegarse a la capa de persistencia (DAO/BD).
         assertEquals("12345678", socio1.getDni());
         assertEquals("12345678", socio2.getDni());
+    }
+    
+    
+    // test setNumero (int num)
+    // creamos el escenario 
+    
+    private AsociadoDTO asociado;
+    
+    @Before
+    public void setUp() {
+        asociado = new AsociadoDTO();
+    }
+    
+    @Test
+    public void testSetNumeroValorTipico() {
+        asociado.setNumero(23);
+
+        assertEquals(23, asociado.getNumero());
+    }
+
+   
+    @Test
+    public void testSetNumeroValorLimiteCero() {
+        
+        asociado.setNumero(0);
+
+        assertEquals("El número 0 debe ser aceptado según SRS 3.1", 0, asociado.getNumero());
+    }
+
+  
+    @Test(expected = AssertionError.class)
+    public void testSetNumeroValorInvalidoNegativo() {
+        
+        asociado.setNumero(-2);
     }
 }
 
