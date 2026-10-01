@@ -50,12 +50,16 @@ public class Test_AsociadoDTO {
     public void testSetDni() {
         AsociadoDTO a1 = new AsociadoDTO();
         a1.setDni("123456");
+
+        assertEquals("123456", a1.getDni());
     }
 
     @Test 
     public void testSetDniLetras() {
         AsociadoDTO a1 = new AsociadoDTO();
         a1.setDni("abcdef");
+
+        assertEquals("abcdef", a1.getDni());
     }
 
     @Test (expected = AssertionError.class)
@@ -113,6 +117,63 @@ public class Test_AsociadoDTO {
     public void testSetNumeroValorInvalidoNegativo() {
         
         asociado.setNumero(-2);
+    }
+
+    // test setCiudad(String ciudad)
+
+    @Test
+    public void testSetCiudadValida() {
+        asociado.setCiudad("Mar del Plata");
+
+        assertEquals("Mar del Plata", asociado.getCiudad());
+    }
+
+    @Test(expected = AssertionError.class)
+    public void testSetCiudadNull() {
+        asociado.setCiudad(null);
+    }
+
+    // test setCalle(String calle)
+
+    @Test
+    public void testSetCalleValida() {
+        asociado.setCalle("San Martin");
+
+        assertEquals("San Martin", asociado.getCalle());
+    }
+
+    @Test(expected = AssertionError.class)
+    public void testSetCalleNull() {
+        asociado.setCalle(null);
+    }
+
+    // test setTelefono(String telefono)
+
+    @Test
+    public void testSetTelefonoValido() {
+        asociado.setTelefono("2231234567");
+
+        assertEquals("2231234567", asociado.getTelefono());
+    }
+
+    @Test(expected = AssertionError.class)
+    public void testSetTelefonoNull() {
+        asociado.setTelefono(null);
+    }
+
+    // test Constructor Parametrizado
+
+    @Test
+    public void testConstructorParametrizadoValido() {
+        AsociadoDTO dto = new AsociadoDTO("Juan", "Perez", "12345678", "Mar del Plata", "San Martin", 1234, "2231234567");
+
+        assertEquals("Juan", dto.getNombre());
+        assertEquals("Perez", dto.getApellido());
+        assertEquals("12345678", dto.getDni());
+        assertEquals("Mar del Plata", dto.getCiudad());
+        assertEquals("San Martin", dto.getCalle());
+        assertEquals(1234, dto.getNumero());
+        assertEquals("2231234567", dto.getTelefono());
     }
 }
 
