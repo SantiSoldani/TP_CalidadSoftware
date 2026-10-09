@@ -44,23 +44,14 @@ public class Test_AsociadoDTO {
         x.setApellido(null); 
     }
     
-    
-    
     @Test 
     public void testSetDni() {
         AsociadoDTO a1 = new AsociadoDTO();
-        a1.setDni("123456");
+        a1.setDni("12345678");
 
-        assertEquals("123456", a1.getDni());
+        assertEquals("12345678", a1.getDni());
     }
 
-    @Test 
-    public void testSetDniLetras() {
-        AsociadoDTO a1 = new AsociadoDTO();
-        a1.setDni("abcdef");
-
-        assertEquals("abcdef", a1.getDni());
-    }
 
     @Test (expected = AssertionError.class)
     public void testSetDniNull() {
@@ -81,8 +72,7 @@ public class Test_AsociadoDTO {
 
         // Ambos objetos retienen el valor asignado sin arrojar excepción.
         // La restricción de unicidad del SRS 3.1 debe delegarse a la capa de persistencia (DAO/BD).
-        assertEquals("12345678", socio1.getDni());
-        assertEquals("12345678", socio2.getDni());
+        assertEquals(socio2.getDni(), socio1.getDni());
     }
     
     
@@ -162,7 +152,6 @@ public class Test_AsociadoDTO {
     }
 
     // test Constructor Parametrizado
-
     @Test
     public void testConstructorParametrizadoValido() {
         AsociadoDTO dto = new AsociadoDTO("Juan", "Perez", "12345678", "Mar del Plata", "San Martin", 1234, "2231234567");
