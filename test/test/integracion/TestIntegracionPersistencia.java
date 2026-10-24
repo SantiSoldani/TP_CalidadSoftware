@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import org.junit.Before;
 import org.junit.Test;
 
+import modelo.modeloDominio.personas.asociado.Asociado;
+import modelo.modeloDominio.util.Domicilio;
 import persistencia.AsociadoDTO;
 import persistencia.BaseDeDatos;
 import persistencia.DataAccessObject;
@@ -27,13 +29,14 @@ public class TestIntegracionPersistencia {
     }
 
     // ========================================================
-    // 1. TEST PATRÓN SINGLETON Y CONECTIVIDAD
+    // 1. CONECTIVIDAD Y PATRÓN SINGLETON
     // ========================================================
+
     @Test
-    public void testSingletonYConexionActiva() {
+    public void test1_SingletonYConexionActiva() {
         BaseDeDatos otraInstancia = BaseDeDatos.getInstancia();
 
-        // assertSame verifica que ambas variables apunten exactamente a la misma posición de memoria
+        // assertSame verifica que ambas variables apunten a la misma posición en memoria
         assertSame("Debe cumplir con el patron Singleton devolviendo la misma instancia", bd, otraInstancia);
 
         Connection conexion = bd.getConexion();
@@ -47,10 +50,57 @@ public class TestIntegracionPersistencia {
     }
 
     // ========================================================
-    // 2. TEST DE INICIALIZACIÓN DE TABLAS Y DATOS SEMILLA
+    // 2. CREATE - OPERACIONES DE INSERCIÓN (guardar)
     // ========================================================
+
     @Test
-    public void testInicializacionDatosSemilla() {
+    public void test2_GuardarAsociadoExitoso() throws SQLException {
+        Domicilio dom = new Domicilio("Alvear", 500, "Mar del Plata");
+        Asociado nuevo = new Asociado("Lucas", "Gomez", "99112233", "2234005566", dom);
+
+        dao.guardar(nuevo);
+
+        ArrayList<AsociadoDTO> lista = dao.cargarBD();
+        assertEquals("La base de datos debe contener 21 registros tras la insercion", 21, lista.size());
+
+        // Verificamos que el nuevo DNI exista y conserve los atributos ingresados
+        boolean encontrado = false;
+        for (AsociadoDTO a : lista) {
+            if ("99112233".equals(a.getDni())) {
+                encontrado = true;
+                assertEquals("Lucas", a.getNombre());
+                assertEquals("Gomez", a.getApellido());
+                assertEquals("Alvear", a.getCalle());
+                assertEquals(500, a.getNumero());
+                assertEquals("Mar del Plata", a.getCiudad());
+                assertEquals("2234005566", a.getTelefono());
+                break;
+            }
+        }
+        assertTrue("El nuevo asociado debe persistirse correctamente en la base", encontrado);
+    }
+
+    @Test(expected = SQLException.class)
+    public void test3_GuardarDniDuplicadoLanzaSQLException() throws SQLException {
+        // '12345678' ya existe en las semillas iniciales (Juan State)
+        Domicilio dom = new Domicilio("Mitre", 100, "Mar del Plata");
+        Asociado duplicado = new Asociado("Pedro", "Otro", "12345678", "2234999999", dom);
+
+        // La base debe rechazar la violacion de unicidad en la columna DNI
+        dao.guardar(duplicado);
+    }
+
+    @Test(expected = AssertionError.class)
+    public void test4_GuardarAsociadoNuloDisparaAssertionError() throws SQLException {
+        dao.guardar(null);
+    }
+
+    // ========================================================
+    // 3. READ - OPERACIONES DE CONSULTA (cargarBD, cargar, cargarConLimite)
+    // ========================================================
+
+    @Test
+    public void test5_InicializacionDatosSemilla() {
         try {
             ArrayList<AsociadoDTO> lista = dao.cargarBD();
             assertNotNull("La lista cargada no debe ser nula", lista);
@@ -60,13 +110,10 @@ public class TestIntegracionPersistencia {
         }
     }
 
-    // ========================================================
-    // 3. TEST DE CARGA INDIVIDUAL (MAPEO DE DATOS)
-    // ========================================================
     @Test
-    public void testCargarAsociadoPorId() {
+    public void test6_CargarAsociadoPorId() {
         try {
-            // El ID 1 en los datos semilla es: Juan State, DNI 12345678, Buenos Aires 123
+            // El ID 1 en las semillas es: Juan State, DNI 12345678, Buenos Aires 123
             AsociadoDTO socio = dao.cargar(1);
 
             assertNotNull("El asociado con ID 1 debe existir en la base", socio);
@@ -82,35 +129,77 @@ public class TestIntegracionPersistencia {
         }
     }
 
-    // ========================================================
-    // 4. TEST DE CARGA CON LÍMITE
-    // ========================================================
     @Test
-    public void testCargarConLimite() {
+    public void test7_CargarConLimite() {
         try {
             ArrayList<AsociadoDTO> lista = dao.cargarConLimite(5);
-            assertNotNull(lista);
+            assertNotNull("La lista recuperada no debe ser nula", lista);
             assertEquals("Debe retornar exactamente 5 registros", 5, lista.size());
         } catch (SQLException e) {
             fail("Error al ejecutar consulta con limite: " + e.getMessage());
         }
     }
-    
-// ========================================================
-    // 5. TEST DE ELIMINACIÓN EXITOSA POR DNI
+
+    @Test(expected = AssertionError.class)
+    public void test8_CargarIdInvalidoDisparaAssertionError() throws SQLException {
+        dao.cargar(0);
+    }
+
+    @Test(expected = AssertionError.class)
+    public void test9_CargarConLimiteInvalidoDisparaAssertionError() throws SQLException {
+        dao.cargarConLimite(0);
+    }
+
     // ========================================================
+    // 4. UPDATE - OPERACIONES DE MODIFICACIÓN (actualizar)
+    // ========================================================
+
     @Test
-    public void testEliminarAsociadoExistente() throws SQLException {
+    public void test10_ActualizarAsociadoIdUno() throws SQLException {
+        // En BaseDeDatos.java, ejecutarActualizacion tiene fijado el id en 1 (stmt.setInt(8, 1))
+        Domicilio domActualizado = new Domicilio("San Martin", 999, "Mar del Plata");
+        Asociado modificado = new Asociado("JuanModificado", "StateModificado", "12345678", "2235550000", domActualizado);
+
+        dao.actualizar(modificado);
+
+        ArrayList<AsociadoDTO> lista = dao.cargarBD();
+        AsociadoDTO socio1 = null;
+        for (AsociadoDTO a : lista) {
+            if ("12345678".equals(a.getDni())) {
+                socio1 = a;
+                break;
+            }
+        }
+
+        assertNotNull("El asociado con ID 1 debe existir tras la actualizacion", socio1);
+        assertEquals("JuanModificado", socio1.getNombre());
+        assertEquals("StateModificado", socio1.getApellido());
+        assertEquals("San Martin", socio1.getCalle());
+        assertEquals(999, socio1.getNumero());
+        assertEquals("2235550000", socio1.getTelefono());
+    }
+
+    @Test(expected = AssertionError.class)
+    public void test11_ActualizarAsociadoNuloDisparaAssertionError() throws SQLException {
+        dao.actualizar(null);
+    }
+
+    // ========================================================
+    // 5. DELETE - OPERACIONES DE ELIMINACIÓN (eliminar)
+    // ========================================================
+
+    @Test
+    public void test12_EliminarAsociadoExistente() throws SQLException {
         String dniAEliminar = "12345678";
 
-        // Ejecutamos la baja lógica/física en la base
+        // Ejecutamos la baja en la base
         dao.eliminar(dniAEliminar);
 
         // Verificamos que la cantidad total de registros se redujo a 19
         ArrayList<AsociadoDTO> lista = dao.cargarBD();
         assertEquals("La base de datos debe contener 19 registros tras la eliminacion", 19, lista.size());
 
-        // Verificamos que el DNI eliminado efectivamente ya no esté en la base
+        // Verificamos que el DNI eliminado efectivamente ya no esté presente
         boolean encontrado = false;
         for (AsociadoDTO a : lista) {
             if (dniAEliminar.equals(a.getDni())) {
@@ -119,6 +208,19 @@ public class TestIntegracionPersistencia {
             }
         }
         assertFalse("El asociado eliminado no debe existir en la base de datos", encontrado);
+    }
+
+    @Test
+    public void test13_EliminarDniInexistenteNoModificaBase() throws SQLException {
+        dao.eliminar("99999999");
+        ArrayList<AsociadoDTO> lista = dao.cargarBD();
+        assertEquals("La base de datos debe mantener los 20 registros intactos", 20, lista.size());
+    }
+
+    @Test(expected = AssertionError.class)
+    public void test14_EliminarDniVacioDisparaAssertionError() throws SQLException {
+        // La precondición del método rechaza la cadena vacía ("")
+        dao.eliminar("");
     }
 
 }
