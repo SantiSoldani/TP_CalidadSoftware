@@ -108,4 +108,23 @@ public class TestAmbulanciaMocks {
         verify(estadoMock, never()).SolicitudDeTraslado();
     }
 
+    // ========================================================
+    // 4. MOCK QUE SIMULA UN CAMBIO DE ESTADO
+    // ========================================================
+    @Test
+    public void testMockSimulaCambioDeEstado() {
+        State nuevoEstadoMock = mock(State.class);
+        doAnswer(invocacion -> {
+            ambulancia.setState(nuevoEstadoMock);
+            return null;
+        }).when(estadoMock).SolicitudDeAtencionDomicilio();
+
+        ambulancia.atenderDomicilio(asociado);
+        ambulancia.regresarSinPaciente();
+
+        assertSame("La ambulancia debe quedar en el estado que puso el mock", nuevoEstadoMock, ambulancia.getEstadoActual());
+        verify(nuevoEstadoMock).RetornoClinica();
+        verify(estadoMock, never()).RetornoClinica();
+    }
+
 }
