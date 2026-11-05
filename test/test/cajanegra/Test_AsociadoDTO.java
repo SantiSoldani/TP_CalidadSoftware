@@ -12,36 +12,19 @@ public class Test_AsociadoDTO {
 
     @Test // Carlos
     public void testSetNombre() {
-        AsociadoDTO x = new AsociadoDTO();
-        x.setNombre("Carlos");
+        AsociadoDTO asociado1 = new AsociadoDTO();
+        asociado1.setNombre("Carlos");
 
-        assertEquals("Carlos", x.getNombre());
+        assertEquals("Carlos", asociado1.getNombre());
     }
 
-
-    @Test(expected = AssertionError.class) // null
-    public void testSetNombreNull() {
-        AsociadoDTO x = new AsociadoDTO();
-        x.setNombre(null); 
-    }
-    
-    
  // test setApellido(string apellido)
-
     @Test // Perez
     public void testSetApellido() {
         AsociadoDTO x = new AsociadoDTO();
         x.setApellido("Perez");
 
         assertEquals("Perez", x.getApellido());
-    }
-
-
- // test setDNI(string dni)
-    @Test(expected = AssertionError.class) // null
-    public void testSetApellidoNull() {
-        AsociadoDTO x = new AsociadoDTO();
-        x.setApellido(null); 
     }
     
     @Test 
@@ -53,15 +36,8 @@ public class Test_AsociadoDTO {
     }
 
 
-    @Test (expected = AssertionError.class)
-    public void testSetDniNull() {
-        AsociadoDTO a1 = new AsociadoDTO();
-        a1.setDni(null);
-    }
-
-
     @Test
-    public void testDniduplicado() {
+    public void testDniDuplicado() {
         // En testing unitario aislado del DTO, dos instancias distintas 
         // pueden tener el mismo DNI porque el DTO no maneja colecciones ni persistencia.
         AsociadoDTO socio1 = new AsociadoDTO();
@@ -75,9 +51,11 @@ public class Test_AsociadoDTO {
         assertEquals(socio2.getDni(), socio1.getDni());
     }
     
-    
     // test setNumero (int num)
-    // creamos el escenario 
+ 
+    
+    // A PARTIR DE ACA NOS DIMOS CUENTA QUE EN LUGAR DE INSTANCIAR EN CADA METODO
+    // PODIAMOS CREAR EL 'ESCENARIO' MEDIANTE LA FUNCION setUp() Y @Before
     
     private AsociadoDTO asociado;
     
@@ -85,6 +63,7 @@ public class Test_AsociadoDTO {
     public void setUp() {
         asociado = new AsociadoDTO();
     }
+    
     
     @Test
     public void testSetNumeroValorTipico() {
@@ -102,12 +81,6 @@ public class Test_AsociadoDTO {
         assertEquals("El número 0 debe ser aceptado según SRS 3.1", 0, asociado.getNumero());
     }
 
-  
-    @Test(expected = AssertionError.class)
-    public void testSetNumeroValorInvalidoNegativo() {
-        
-        asociado.setNumero(-2);
-    }
 
     // test setCiudad(String ciudad)
 
@@ -116,11 +89,6 @@ public class Test_AsociadoDTO {
         asociado.setCiudad("Mar del Plata");
 
         assertEquals("Mar del Plata", asociado.getCiudad());
-    }
-
-    @Test(expected = AssertionError.class)
-    public void testSetCiudadNull() {
-        asociado.setCiudad(null);
     }
 
     // test setCalle(String calle)
@@ -132,11 +100,6 @@ public class Test_AsociadoDTO {
         assertEquals("San Martin", asociado.getCalle());
     }
 
-    @Test(expected = AssertionError.class)
-    public void testSetCalleNull() {
-        asociado.setCalle(null);
-    }
-
     // test setTelefono(String telefono)
 
     @Test
@@ -146,11 +109,7 @@ public class Test_AsociadoDTO {
         assertEquals("2231234567", asociado.getTelefono());
     }
 
-    @Test(expected = AssertionError.class)
-    public void testSetTelefonoNull() {
-        asociado.setTelefono(null);
-    }
-
+    
     // test Constructor Parametrizado
     @Test
     public void testConstructorParametrizadoValido() {

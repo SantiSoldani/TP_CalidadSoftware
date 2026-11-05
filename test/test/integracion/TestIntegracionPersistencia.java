@@ -183,13 +183,37 @@ public class TestIntegracionPersistencia {
     public void test11_ActualizarAsociadoNuloDisparaAssertionError() throws SQLException {
         dao.actualizar(null);
     }
+    
+    @Test
+    public void test12_ActualizarAsociadoFallaAlModificarElRegistroIncorrecto() throws SQLException {
+        // 1. Cargamos la base y guardamos el nombre original del PRIMER asociado
+        ArrayList<AsociadoDTO> listaInicial = dao.cargarBD();
+        AsociadoDTO primerAsociadoOriginal = listaInicial.get(0);
+        String nombreOriginalId1 = primerAsociadoOriginal.getNombre();
+
+        // 2. Creamos una entidad modificada con un DNI inventado para no chocar con la restriccion UNIQUE
+        Domicilio dom = new Domicilio("Calle Falsa", 123, "Mar del Plata");
+        Asociado asociadoModificado = new Asociado("NombreEditado", "ApellidoEditado", "00000000", "2230000000", dom);
+
+        // 3. Ejecutamos la actualizacion (debería actualizar al asociado con DNI 00000000, no al ID 1)
+        dao.actualizar(asociadoModificado);
+
+        // 4. Volvemos a cargar la base para verificar el estado final
+        ArrayList<AsociadoDTO> listaFinal = dao.cargarBD();
+        AsociadoDTO primerAsociadoPost = listaFinal.get(0);
+
+        // 5. CAJA NEGRA: Esta asercion va a FALLAR porque el sistema, en lugar de no hacer nada 
+        // o actualizar al correcto, le cambio el nombre al primer asociado de la base.
+        assertEquals("El primer asociado no deberia verse afectado al intentar actualizar otro registro", 
+                     nombreOriginalId1, primerAsociadoPost.getNombre());
+    }
 
     // ========================================================
     // 5. DELETE - OPERACIONES DE ELIMINACIÓN (eliminar)
     // ========================================================
 
     @Test
-    public void test12_EliminarAsociadoExistente() throws SQLException {
+    public void test13_EliminarAsociadoExistente() throws SQLException {
         String dniAEliminar = "12345678";
 
         // Ejecutamos la baja en la base
@@ -211,16 +235,24 @@ public class TestIntegracionPersistencia {
     }
 
     @Test
-    public void test13_EliminarDniInexistenteNoModificaBase() throws SQLException {
+    public void test14_EliminarDniInexistenteNoModificaBase() throws SQLException {
         dao.eliminar("99999999");
         ArrayList<AsociadoDTO> lista = dao.cargarBD();
         assertEquals("La base de datos debe mantener los 20 registros intactos", 20, lista.size());
     }
 
     @Test(expected = AssertionError.class)
-    public void test14_EliminarDniVacioDisparaAssertionError() throws SQLException {
+    public void test15_EliminarDniVacioDisparaAssertionError() throws SQLException {
         // La precondición del método rechaza la cadena vacía ("")
         dao.eliminar("");
+    }
+    
+    @Test(expected = AssertionError.class)
+    public void test16_EliminarDniNuloFallaAlNoDispararError() throws SQLException {
+        // En caja negra, al pasar un DNI nulo, el sistema debería rechazarlo de inmediato 
+        // lanzando un AssertionError o una excepción, tal como lo hace con guardar(null).
+        // Como el sistema falla de forma silenciosa y no lanza nada, el test va a FALLAR en JUnit.
+        dao.eliminar(null);
     }
 
 }

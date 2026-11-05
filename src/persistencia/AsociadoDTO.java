@@ -52,6 +52,7 @@ public class AsociadoDTO implements Serializable {
         assert nombre != null;
         this.nombre = nombre;
     }
+    
     public String getApellido() {
         return apellido;
     }
