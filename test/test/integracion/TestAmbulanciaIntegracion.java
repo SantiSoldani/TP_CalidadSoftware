@@ -40,6 +40,13 @@ public class TestAmbulanciaIntegracion {
         ambulancia.setSimulacionActiva(false);
     }
 
+    private void esperarEstado(Thread hilo, Thread.State estado) throws InterruptedException {
+        long limite = System.currentTimeMillis() + 2000;
+        while (hilo.getState() != estado && System.currentTimeMillis() < limite) {
+            Thread.sleep(10);
+        }
+    }
+
     // ========================================================
     // 1. FLUJOS COMPLETOS DE LA MAQUINA DE ESTADOS
     // ========================================================
@@ -91,6 +98,17 @@ public class TestAmbulanciaIntegracion {
         assertTrue("No debe cambiar de estado mientras traslada", ambulancia.getEstadoActual() instanceof TrasladandoPacienteClinicaState);
     }
 
+    @Test
+    public void testPedidoRechazadoNoOcupaLaAmbulancia() {
+        ambulancia.solicitarMantenimiento(operario);
+        ambulancia.volviendoDelTaller();
+
+        ambulancia.atenderDomicilio(asociado1);
+
+        assertTrue("Regresando del taller no puede atender a domicilio", ambulancia.getEstadoActual() instanceof RegresandoDelTallerState);
+        assertFalse("Si el estado rechaza el pedido la ambulancia no debe quedar ocupada", ambulancia.isOcupado());
+    }
+
     // ========================================================
     // 2. CONCURRENCIA - ESPERA Y LIBERACION DE LA AMBULANCIA
     // ========================================================
@@ -100,7 +118,7 @@ public class TestAmbulanciaIntegracion {
 
         Thread hilo = new Thread(() -> ambulancia.trasladarALaClinica(asociado2));
         hilo.start();
-        Thread.sleep(500);
+        esperarEstado(hilo, Thread.State.WAITING);
 
         assertEquals("El segundo pedido debe quedar esperando", Thread.State.WAITING, hilo.getState());
         assertTrue(ambulancia.getEstadoActual() instanceof AtendiendoEnDomicilioState);
@@ -119,7 +137,7 @@ public class TestAmbulanciaIntegracion {
 
         Thread hilo = new Thread(() -> ambulancia.trasladarALaClinica(asociado2));
         hilo.start();
-        Thread.sleep(500);
+        esperarEstado(hilo, Thread.State.WAITING);
 
         ambulancia.setSimulacionActiva(false);
         hilo.join(2000);
@@ -134,7 +152,7 @@ public class TestAmbulanciaIntegracion {
 
         Thread hilo = new Thread(() -> ambulancia.regresarSinPaciente());
         hilo.start();
-        Thread.sleep(100);
+        esperarEstado(hilo, Thread.State.TIMED_WAITING);
 
         long inicio = System.currentTimeMillis();
         ambulancia.isOcupado();
@@ -152,10 +170,27 @@ public class TestAmbulanciaIntegracion {
         ambulancia.atenderDomicilio(asociado1);
 
         Thread hilo = new Thread(new RetornoAutomatico(ambulancia));
+        hilo.setDaemon(true);
         hilo.start();
-        Thread.sleep(11000);
 
+        // Valores limite del intervalo de 10 segundos
+        Thread.sleep(9000);
+        assertTrue("Antes de los 10 segundos no debe hacer el retorno", ambulancia.getEstadoActual() instanceof AtendiendoEnDomicilioState);
+
+        Thread.sleep(2000);
         assertTrue("El retorno automatico debe hacer volver a la ambulancia", ambulancia.getEstadoActual() instanceof RegresandoClinicaSinPacienteState);
+    }
+
+    @Test
+    public void testRetornoAutomaticoConSimulacionFinalizada() throws InterruptedException {
+        ambulancia.setSimulacionActiva(false);
+
+        Thread hilo = new Thread(new RetornoAutomatico(ambulancia));
+        hilo.setDaemon(true);
+        hilo.start();
+        hilo.join(1000);
+
+        assertFalse("Con la simulacion finalizada el hilo debe terminar enseguida", hilo.isAlive());
     }
 
 }
